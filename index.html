@@ -33,7 +33,6 @@ header{
  display:flex;
  gap:6px;
  padding:10px;
- overflow:auto;
 }
 
 .tab{
@@ -120,30 +119,21 @@ button{
 const nomesDias=["Seg","Ter","Qua","Qui","Sex"];
 
 const dados={
-mmc:{nome:"Montagem e Manutenção",prof:"Olavo Olímpio",local:"Lab A103"},
-ed:{nome:"Educação Física",prof:"Daniel Maldonado",local:"Quadra"},
-qui:{nome:"Química",prof:"Ana Kawabe",local:"Lab"},
-fis:{nome:"Física",prof:"Reinaldo Caraca",local:"Sala"},
-arte:{nome:"Arte",prof:"Maristela Rodrigues",local:"Ateliê"},
-mp:{nome:"Matemática + Programação",prof:"Eduardo Moreira",local:"Sala"},
-soa:{nome:"Sistemas Operacionais",prof:"Luis Salzes",local:"Lab"},
-prog:{nome:"Programação Básica",prof:"Ariadne Arras",local:"Lab"},
-hist:{nome:"História",prof:"Lucimila Souza",local:"Sala"},
-geo:{nome:"Geografia",prof:"Rodrigo Pacheco",local:"Sala"},
-fil:{nome:"Filosofia",prof:"Martina Florencio",local:"Sala"},
-soc:{nome:"Sociologia",prof:"João Campinho",local:"Sala"},
-ing:{nome:"Inglês",prof:"Daniela Matos",local:"Sala"},
-port:{nome:"Português",prof:"Julia Mattos",local:"Sala"},
-bio:{nome:"Biologia",prof:"—",local:"Sala"},
-bd:{nome:"Banco de Dados",prof:"—",local:"Lab"}
+mmc:{nome:"Montagem e Manutenção",prof:["Olavo Olímpio"],local:"Lab A103"},
+mp:{nome:"Matemática + Programação",prof:["Eduardo Moreira","Ariadne Arras"],local:"Sala"},
+ed:{nome:"Educação Física",prof:["Daniel Maldonado"],local:"Quadra"},
+qui:{nome:"Química",prof:["Ana Kawabe"],local:"Lab"},
+fis:{nome:"Física",prof:["Reinaldo Caraca"],local:"Sala"},
+soc:{nome:"Sociologia",prof:["João Campinho"],local:"Sala"}
 };
 
 const agenda=[
-{d:1,t:"07:10",id:"mmc"},{d:1,t:"08:00",id:"mmc"},{d:1,t:"08:50",id:"ed"},{d:1,t:"10:00",id:"ed"},{d:1,t:"10:50",id:"qui"},{d:1,t:"11:40",id:"qui"},
-{d:2,t:"07:10",id:"soc"},{d:2,t:"08:00",id:"soc"},{d:2,t:"08:50",id:"mp"},{d:2,t:"10:00",id:"mp"},{d:2,t:"10:50",id:"fis"},{d:2,t:"11:40",id:"fis"},{d:2,t:"13:30",id:"mp"},{d:2,t:"14:20",id:"mp"},
-{d:3,t:"07:10",id:"geo"},{d:3,t:"08:00",id:"geo"},{d:3,t:"08:50",id:"arte"},{d:3,t:"10:00",id:"arte"},{d:3,t:"13:30",id:"bio"},{d:3,t:"14:20",id:"bio"},
-{d:4,t:"07:10",id:"port"},{d:4,t:"08:00",id:"port"},{d:4,t:"08:50",id:"soa"},{d:4,t:"10:00",id:"soa"},{d:4,t:"10:50",id:"prog"},{d:4,t:"11:40",id:"prog"},{d:4,t:"13:30",id:"prog"},{d:4,t:"14:20",id:"prog"},
-{d:5,t:"07:10",id:"hist"},{d:5,t:"08:00",id:"hist"},{d:5,t:"08:50",id:"ing"},{d:5,t:"10:00",id:"ing"},{d:5,t:"10:50",id:"fil"},{d:5,t:"11:40",id:"fil"},{d:5,t:"13:30",id:"bd"},{d:5,t:"14:20",id:"bd"}
+{d:1,i:"07:10",f:"08:00",id:"mmc"},
+{d:1,i:"08:00",f:"08:50",id:"mmc"},
+{d:1,i:"08:50",f:"09:40",id:"ed"},
+{d:2,i:"07:10",f:"08:00",id:"soc"},
+{d:2,i:"08:00",f:"08:50",id:"soc"},
+{d:2,i:"08:50",f:"09:40",id:"mp"}
 ];
 
 const elLista=document.getElementById("lista");
@@ -156,24 +146,26 @@ const mInfo=document.getElementById("mInfo");
 function abrirInfo(id){
  const d=dados[id];
  mTitulo.innerText=d.nome;
- mInfo.innerHTML=`Professor: ${d.prof}<br>Local: ${d.local}`;
+ mInfo.innerHTML=
+  "Professores: "+d.prof.join(", ")+"<br>Local: "+d.local;
  modal.style.display="block";
 }
 
-function renderDia(dia){
+function renderDia(d){
  elLista.innerHTML="";
- agenda.filter(a=>a.d===dia).forEach(a=>{
+ agenda.filter(a=>a.d===d).forEach(a=>{
   const c=document.createElement("div");
   c.className="card";
-  c.innerHTML=`<div class="hora">${a.t}</div>
-               <div class="materia">${dados[a.id].nome}</div>`;
+  c.innerHTML=`
+   <div class="hora">${a.i} → ${a.f}</div>
+   <div class="materia">${dados[a.id].nome}</div>`;
   c.onclick=()=>abrirInfo(a.id);
   elLista.appendChild(c);
  });
 }
 
 function montarTabs(){
- for(let d=1; d<=5; d++){
+ for(let d=1;d<=5;d++){
   const t=document.createElement("div");
   t.className="tab";
   t.innerText=nomesDias[d-1];
@@ -186,40 +178,31 @@ function montarTabs(){
  }
 }
 
+function toMin(h){
+ let [a,b]=h.split(":");
+ return (+a)*60+(+b);
+}
+
 function proxAula(){
  let now=new Date();
  let dia=now.getDay();
- let minNow=now.getHours()*60+now.getMinutes();
- if(dia===0||dia===6){dia=1;minNow=-1;}
+ let min=now.getHours()*60+now.getMinutes();
+ if(dia===0||dia===6){dia=1;min=-1;}
 
  for(let a of agenda){
-  let [h,m]=a.t.split(":");
-  let min=(+h)*60+(+m);
-  if(a.d===dia && min>minNow){
-   elProx.innerText=`Próxima aula: ${dados[a.id].nome} — ${nomesDias[a.d-1]} ${a.t}`;
+  if(a.d===dia && toMin(a.i)>min){
+   elProx.innerText=`Próxima aula: ${dados[a.id].nome} — ${a.i}-${a.f}`;
    return;
   }
  }
 
- for(let a of agenda){
-  if(a.d>dia){
-   elProx.innerText=`Próxima aula: ${dados[a.id].nome} — ${nomesDias[a.d-1]} ${a.t}`;
-   return;
-  }
- }
-
- elProx.innerText="Sem aulas restantes";
+ elProx.innerText="Sem aulas restantes hoje";
 }
 
 montarTabs();
-
-let hoje=new Date().getDay();
-if(hoje===0||hoje===6) hoje=1;
-document.querySelectorAll(".tab")[hoje-1].classList.add("ativa");
-renderDia(hoje);
-
+renderDia(1);
+document.querySelector(".tab").classList.add("ativa");
 proxAula();
-setInterval(proxAula,60000);
 </script>
 
 </body>
