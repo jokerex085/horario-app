@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Horário Escolar</title>
+
+<style>
+body{
+ margin:0;
+ font-family:system-ui,Arial;
+ color:#e5e7eb;
+ background:linear-gradient(180deg,#1e293b,#020617);
+}
+
+header{
+ padding:14px;
+ text-align:center;
+ font-size:20px;
+ font-weight:bold;
+ background:#0f172a;
+}
+
+#proxima{
+ margin:10px;
+ padding:12px;
+ border-radius:12px;
+ background:#1e293b;
+ font-size:14px;
+}
+
+.tabs{
+ display:flex;
+ gap:6px;
+ padding:10px;
+ overflow:auto;
+}
+
+.tab{
+ flex:1;
+ padding:10px;
+ border-radius:10px;
+ background:#0f172a;
+ text-align:center;
+ cursor:pointer;
+}
+
+.tab.ativa{
+ background:#3b82f6;
+}
+
+.grid{
+ padding:10px;
+ display:grid;
+ gap:10px;
+}
+
+.card{
+ background:#0f172a;
+ border-radius:14px;
+ padding:12px;
+}
+
+.hora{
+ font-size:12px;
+ opacity:.7;
+}
+
+.materia{
+ margin-top:6px;
+ padding:10px;
+ border-radius:10px;
+ background:#1f2937;
+ cursor:pointer;
+}
+
+.modal{
+ display:none;
+ position:fixed;
+ inset:0;
+ background:#0008;
+}
+
+.modal-box{
+ background:#0f172a;
+ margin:20% 16px;
+ padding:18px;
+ border-radius:14px;
+}
+
+button{
+ margin-top:10px;
+ width:100%;
+ padding:10px;
+ border:none;
+ border-radius:10px;
+ background:#3b82f6;
+ color:white;
+}
+</style>
+</head>
+
+<body>
+
+<header>📚 Meu Horário</header>
+<div id="proxima">Carregando próxima aula...</div>
+
+<div class="tabs" id="tabs"></div>
+<div class="grid" id="lista"></div>
+
+<div class="modal" id="modal">
+ <div class="modal-box">
+  <h3 id="mTitulo"></h3>
+  <div id="mInfo"></div>
+  <button onclick="modal.style.display='none'">Fechar</button>
+ </div>
+</div>
+
+<script>
+const nomesDias=["Seg","Ter","Qua","Qui","Sex"];
+
+const dados={
+mmc:{nome:"Montagem e Manutenção",prof:"Olavo Olímpio",local:"Lab A103"},
+ed:{nome:"Educação Física",prof:"Daniel Maldonado",local:"Quadra"},
+qui:{nome:"Química",prof:"Ana Kawabe",local:"Lab"},
+fis:{nome:"Física",prof:"Reinaldo Caraca",local:"Sala"},
+arte:{nome:"Arte",prof:"Maristela Rodrigues",local:"Ateliê"},
+mp:{nome:"Matemática + Programação",prof:"Eduardo Moreira",local:"Sala"},
+soa:{nome:"Sistemas Operacionais",prof:"Luis Salzes",local:"Lab"},
+prog:{nome:"Programação Básica",prof:"Ariadne Arras",local:"Lab"},
+hist:{nome:"História",prof:"Lucimila Souza",local:"Sala"},
+geo:{nome:"Geografia",prof:"Rodrigo Pacheco",local:"Sala"},
+fil:{nome:"Filosofia",prof:"Martina Florencio",local:"Sala"},
+soc:{nome:"Sociologia",prof:"João Campinho",local:"Sala"},
+ing:{nome:"Inglês",prof:"Daniela Matos",local:"Sala"},
+port:{nome:"Português",prof:"Julia Mattos",local:"Sala"},
+bio:{nome:"Biologia",prof:"—",local:"Sala"},
+bd:{nome:"Banco de Dados",prof:"—",local:"Lab"}
+};
+
+const agenda=[
+{d:1,t:"07:10",id:"mmc"},{d:1,t:"08:00",id:"mmc"},{d:1,t:"08:50",id:"ed"},{d:1,t:"10:00",id:"ed"},{d:1,t:"10:50",id:"qui"},{d:1,t:"11:40",id:"qui"},
+{d:2,t:"07:10",id:"soc"},{d:2,t:"08:00",id:"soc"},{d:2,t:"08:50",id:"mp"},{d:2,t:"10:00",id:"mp"},{d:2,t:"10:50",id:"fis"},{d:2,t:"11:40",id:"fis"},{d:2,t:"13:30",id:"mp"},{d:2,t:"14:20",id:"mp"},
+{d:3,t:"07:10",id:"geo"},{d:3,t:"08:00",id:"geo"},{d:3,t:"08:50",id:"arte"},{d:3,t:"10:00",id:"arte"},{d:3,t:"13:30",id:"bio"},{d:3,t:"14:20",id:"bio"},
+{d:4,t:"07:10",id:"port"},{d:4,t:"08:00",id:"port"},{d:4,t:"08:50",id:"soa"},{d:4,t:"10:00",id:"soa"},{d:4,t:"10:50",id:"prog"},{d:4,t:"11:40",id:"prog"},{d:4,t:"13:30",id:"prog"},{d:4,t:"14:20",id:"prog"},
+{d:5,t:"07:10",id:"hist"},{d:5,t:"08:00",id:"hist"},{d:5,t:"08:50",id:"ing"},{d:5,t:"10:00",id:"ing"},{d:5,t:"10:50",id:"fil"},{d:5,t:"11:40",id:"fil"},{d:5,t:"13:30",id:"bd"},{d:5,t:"14:20",id:"bd"}
+];
+
+const elLista=document.getElementById("lista");
+const elTabs=document.getElementById("tabs");
+const elProx=document.getElementById("proxima");
+const modal=document.getElementById("modal");
+const mTitulo=document.getElementById("mTitulo");
+const mInfo=document.getElementById("mInfo");
+
+function abrirInfo(id){
+ const d=dados[id];
+ mTitulo.innerText=d.nome;
+ mInfo.innerHTML=`Professor: ${d.prof}<br>Local: ${d.local}`;
+ modal.style.display="block";
+}
+
+function renderDia(dia){
+ elLista.innerHTML="";
+ agenda.filter(a=>a.d===dia).forEach(a=>{
+  const c=document.createElement("div");
+  c.className="card";
+  c.innerHTML=`<div class="hora">${a.t}</div>
+               <div class="materia">${dados[a.id].nome}</div>`;
+  c.onclick=()=>abrirInfo(a.id);
+  elLista.appendChild(c);
+ });
+}
+
+function montarTabs(){
+ for(let d=1; d<=5; d++){
+  const t=document.createElement("div");
+  t.className="tab";
+  t.innerText=nomesDias[d-1];
+  t.onclick=()=>{
+   document.querySelectorAll(".tab").forEach(x=>x.classList.remove("ativa"));
+   t.classList.add("ativa");
+   renderDia(d);
+  };
+  elTabs.appendChild(t);
+ }
+}
+
+function proxAula(){
+ let now=new Date();
+ let dia=now.getDay();
+ let minNow=now.getHours()*60+now.getMinutes();
+ if(dia===0||dia===6){dia=1;minNow=-1;}
+
+ for(let a of agenda){
+  let [h,m]=a.t.split(":");
+  let min=(+h)*60+(+m);
+  if(a.d===dia && min>minNow){
+   elProx.innerText=`Próxima aula: ${dados[a.id].nome} — ${nomesDias[a.d-1]} ${a.t}`;
+   return;
+  }
+ }
+
+ for(let a of agenda){
+  if(a.d>dia){
+   elProx.innerText=`Próxima aula: ${dados[a.id].nome} — ${nomesDias[a.d-1]} ${a.t}`;
+   return;
+  }
+ }
+
+ elProx.innerText="Sem aulas restantes";
+}
+
+montarTabs();
+
+let hoje=new Date().getDay();
+if(hoje===0||hoje===6) hoje=1;
+document.querySelectorAll(".tab")[hoje-1].classList.add("ativa");
+renderDia(hoje);
+
+proxAula();
+setInterval(proxAula,60000);
+</script>
+
+</body>
+</html>
